@@ -124,8 +124,8 @@ def copyDefaultConfig(name = 'sftp-config.json'):
 	print("Writing to "+os.path.join(file_path, name))
 	try:
 		file = open(os.path.join(file_path, name), 'w')
-		file.write('{\t"type": "sftp",\n\t"host": "43.31.79.117",\n\t"user": "systeam-1",\n\t"password": "hgrm-sys-1",' \
-			+'"port": "22",\n\t"remote_path": "/home/systeam-1/workspace/dmic/p4bb/kernel/",\n\t"ignore_regexes": ['	\
+		file.write('{\t"type": "sftp",\n\t"host": "***IP***",\n\t"user": "***USER NAME***",\n\t"password": "***PASSWORD***",' \
+			+'"port": "22",\n\t"remote_path": "***REMOTE FOLDER***",\n\t"ignore_regexes": ['	\
 			+'"\\\\.sublime-(project|workspace)", "sftp-config(-alt\\\\d?)?\\\\.json","sftp-settings\\\\.json", "/venv/", "\\\\.svn", "\\\\.hg", "\\\\.git",'
 			+'"\\\\.bzr", "_darcs", "CVS", "\\\\.DS_Store", "Thumbs\\\\.db", "desktop\\\\.ini"],\n\t"connect_timeout": 30,\n}')
 	finally:
