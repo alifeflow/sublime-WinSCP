@@ -2,5 +2,9 @@
 	{
 		"caption": "SFTP: Browse With WinSCP",
 		"command": "browse_with_winscp"
+	},
+	{
+		"caption": "SFTP: Send Current File With WinSCP",
+		"command": "send_with_winscp"
 	}
 ]

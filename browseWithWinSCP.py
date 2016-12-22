@@ -1,29 +1,62 @@
 import sublime_plugin, sublime, subprocess, os, sys
-from .dirConfig import getConfig
+from .dirConfig import getConfig, copyDefaultConfig
 
+# Init settings
 settings = sublime.load_settings('WinSCP.sublime-settings');
-
+winscpExe = settings.get('winscpExe') or "winSCP"
 configName = 'sftp-config.json'
-winscpExe = settings.get('winscpExe') or 'WinSCP';
 
-if sys.platform.startswith('win'):
-	for programFilesVar in ['ProgramFiles', 'ProgramFiles(x86)']:
-		try:
-			_winscpExe = os.environ[programFilesVar] + '\WinSCP\WinSCP.exe'
-			if os.path.exists(_winscpExe):
-				winscpExe = _winscpExe
-				break
-		except KeyError:
-			pass
+# Generate default settings
+if (not settings.has('winscpExe')):
+	if sys.platform.startswith('win'):
+			try:
+				winscpExe = '"' + os.environ['ProgramFiles'] + '\WinSCP\WinSCP.exe' + '"'
+				winscpExe = '"' + os.environ['ProgramFiles(x86)'] + '\WinSCP\WinSCP.exe' + '"'
+			except KeyError:
+				pass
+	settings.set('winscpExe', winscpExe)
+	sublime.save_settings('WinSCP.sublime-settings')
 
-startWinscpCommand = '"'+ winscpExe + '"' + ' {type}://"{user}":"{password}"@{host}:{port}"{remote_path}" /rawsettings LocalDirectory="{local_path}"'
-
+# Genetate winscp command
+startWinscpCommand = winscpExe + ' {type}://"{user}":"{password}"@{host}:{port}"{remote_path}" /rawsettings LocalDirectory="{local_path}"'
 if sys.platform == 'darwin':
 	startWinscpCommand = "/Applications/Wine.app/Contents/Resources/bin/wine  " + startWinscpCommand
 
 class browse_with_winscpCommand(sublime_plugin.WindowCommand):
 	def run(self, edit = None):
-		conf = getConfig(configName)
+		print("winscp: "+startWinscpCommand)
+		try:
+			conf = getConfig(configName)
+		except AttributeError:
+			print("No method found for getConfig()")
 		if conf is not None:
 			subprocess.Popen(startWinscpCommand.format(**conf), shell=True)
+			print ("command is:"+startWinscpCommand)
+		else:
+			if(sublime.ok_cancel_dialog("No config file found.\nWould you like to create a default config?")):
+				copyDefaultConfig(configName)
 
+class send_with_winscpCommand(sublime_plugin.WindowCommand):
+	def run(self, edit = None):
+		print("winscp: "+startWinscpCommand)
+		try:
+			conf = getConfig(configName)
+		except AttributeError:
+			print("No method found for getConfig()")
+		if conf is not None:
+			remoteLocString = sublime.active_window().active_view().file_name()
+			print(remoteLocString)
+			for currentFolder in sublime.active_window().folders():
+				if (remoteLocString.startswith(currentFolder)):
+					print ("Found a prefix with "+currentFolder)
+					remoteLocString = remoteLocString[len(currentFolder)+1:]
+				print(remoteLocString)
+
+			remoteLocString = remoteLocString.replace('\\', '/')
+			sendCommandString = '/console /command "put '+sublime.active_window().active_view().file_name()+' '+remoteLocString+'"'
+
+			subprocess.Popen(startWinscpCommand.format(**conf)+" "+sendCommandString, shell=True)
+			print ("command is:"+startWinscpCommand.format(**conf)+" "+sendCommandString)
+		else:
+			if(sublime.ok_cancel_dialog("No config file found.\nWould you like to create a default config?")):
+				copyDefaultConfig(configName)

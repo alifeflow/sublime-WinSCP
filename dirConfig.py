@@ -1,4 +1,4 @@
-import sublime_plugin, sublime, os, sys, re, json
+import sublime_plugin, sublime, os, sys, re, json, shutil
 
 configs = {}
 nestingLimit = 30
@@ -90,6 +90,7 @@ def parseJson(file_path):
 		for line in file:
 			contents += removeLineComment.sub('', line)
 	finally:
+		file.seek(0)
 		file.close()
 	contents = removeComma.sub('}', contents)
 	decoder = json.JSONDecoder()
@@ -98,15 +99,34 @@ def parseJson(file_path):
 
 def getConfig(name = 'sftp-config.json'):
 	if hasActiveView() is False:
-		file_path = os.path.dirname(guessConfigFile(sublime.active_window().folders(), name))
+		guessConfString = guessConfigFile(sublime.active_window().folders(), name)
+		if (guessConfString is None or len(guessConfString)==0):
+			return None
+		else:
+			file_path = os.path.dirname(guessConfString)
 	else:
 		file_path = os.path.dirname(sublime.active_window().active_view().file_name())
 	_file = getConfigFile(file_path, name)
-	try:
-		if isString(_file):
-			conf = parseJson(_file)
-			conf['local_path'] = os.path.dirname(_file)
-			return conf
-	except:
+	# try:
+	if isString(_file):
+		conf = parseJson(_file)
+		conf['local_path'] = os.path.dirname(_file)
+		return conf
+	# except:
 		pass
 	return None
+
+def copyDefaultConfig(name = 'sftp-config.json'):
+	if hasActiveView() is False:
+		file_path = sublime.active_window().folders()[0]
+	else:
+		file_path = os.path.dirname(sublime.active_window().active_view().file_name())
+	print("Writing to "+os.path.join(file_path, name))
+	try:
+		file = open(os.path.join(file_path, name), 'w')
+		file.write('{\t"type": "sftp",\n\t"host": "43.31.79.117",\n\t"user": "systeam-1",\n\t"password": "hgrm-sys-1",' \
+			+'"port": "22",\n\t"remote_path": "/home/systeam-1/workspace/dmic/p4bb/kernel/",\n\t"ignore_regexes": ['	\
+			+'"\\\\.sublime-(project|workspace)", "sftp-config(-alt\\\\d?)?\\\\.json","sftp-settings\\\\.json", "/venv/", "\\\\.svn", "\\\\.hg", "\\\\.git",'
+			+'"\\\\.bzr", "_darcs", "CVS", "\\\\.DS_Store", "Thumbs\\\\.db", "desktop\\\\.ini"],\n\t"connect_timeout": 30,\n}')
+	finally:
+		file.close()
