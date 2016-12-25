@@ -90,22 +90,29 @@ def parseJson(file_path):
 		for line in file:
 			contents += removeLineComment.sub('', line)
 	finally:
-		file.seek(0)
-		file.close()
+		if(not (file is None)):
+			file.seek(0)
+			file.close()
 	contents = removeComma.sub('}', contents)
 	decoder = json.JSONDecoder()
 	return decoder.decode(contents)
 
 
-def getConfig(name = 'sftp-config.json'):
-	if hasActiveView() is False:
+def getConfig(name, isFolder):
+	if isFolder is True:
+		print("Starting from a folder")
 		guessConfString = guessConfigFile(sublime.active_window().folders(), name)
 		if (guessConfString is None or len(guessConfString)==0):
 			return None
 		else:
 			file_path = os.path.dirname(guessConfString)
 	else:
-		file_path = os.path.dirname(sublime.active_window().active_view().file_name())
+		print("Starting from a file")
+		current_file = sublime.active_window().active_view().file_name()
+		if current_file is None:
+			return None
+		else:
+			file_path = os.path.dirname(current_file)
 	_file = getConfigFile(file_path, name)
 	# try:
 	if isString(_file):

@@ -1,32 +1,44 @@
 import sublime_plugin, sublime, subprocess, os, sys
 from .dirConfig import getConfig, copyDefaultConfig
 
-# Init settings
-settings = sublime.load_settings('WinSCP.sublime-settings');
-winscpExe = settings.get('winscpExe') or "winSCP"
+isInitialized = False
+startWinscpCommand = ""
 configName = 'sftp-config.json'
 
-# Generate default settings
-if (not settings.has('winscpExe')):
-	if sys.platform.startswith('win'):
-			try:
-				winscpExe = '"' + os.environ['ProgramFiles'] + '\WinSCP\WinSCP.exe' + '"'
-				winscpExe = '"' + os.environ['ProgramFiles(x86)'] + '\WinSCP\WinSCP.exe' + '"'
-			except KeyError:
-				pass
-	settings.set('winscpExe', winscpExe)
-	sublime.save_settings('WinSCP.sublime-settings')
+def init():
+	# Init settings
+	settings = sublime.load_settings('WinSCP.sublime-settings');
+	winscpExe = settings.get('winscpExe') or "winSCP"
+	print("Load settings: "+winscpExe)
 
-# Genetate winscp command
-startWinscpCommand = winscpExe + ' {type}://"{user}":"{password}"@{host}:{port}"{remote_path}" /rawsettings LocalDirectory="{local_path}"'
-if sys.platform == 'darwin':
-	startWinscpCommand = "/Applications/Wine.app/Contents/Resources/bin/wine  " + startWinscpCommand
+	# Generate default settings
+	if (not settings.has('winscpExe')):
+		print("No Setting Found")
+		if sys.platform.startswith('win'):
+				try:
+					winscpExe = '"' + os.environ['ProgramFiles'] + '\WinSCP\WinSCP.exe' + '"'
+					winscpExe = '"' + os.environ['ProgramFiles(x86)'] + '\WinSCP\WinSCP.exe' + '"'
+				except KeyError:
+					pass
+		settings.set('winscpExe', winscpExe)
+		sublime.save_settings('WinSCP.sublime-settings')
+
+	# Genetate winscp command
+	startWinscpCommand = winscpExe + ' {type}://"{user}":"{password}"@{host}:{port}"{remote_path}" /rawsettings LocalDirectory="{local_path}"'
+	if sys.platform == 'darwin':
+		startWinscpCommand = "/Applications/Wine.app/Contents/Resources/bin/wine  " + startWinscpCommand
+
+	isInitialized = True
+	return startWinscpCommand
 
 class browse_with_winscpCommand(sublime_plugin.WindowCommand):
 	def run(self, edit = None):
+		if not isInitialized:
+			startWinscpCommand = init()
+
 		print("winscp: "+startWinscpCommand)
 		try:
-			conf = getConfig(configName)
+			conf = getConfig(configName, True)
 		except AttributeError:
 			print("No method found for getConfig()")
 		if conf is not None:
@@ -38,9 +50,12 @@ class browse_with_winscpCommand(sublime_plugin.WindowCommand):
 
 class send_with_winscpCommand(sublime_plugin.WindowCommand):
 	def run(self, edit = None):
+		if not isInitialized:
+			startWinscpCommand = init()
+
 		print("winscp: "+startWinscpCommand)
 		try:
-			conf = getConfig(configName)
+			conf = getConfig(configName, False)
 		except AttributeError:
 			print("No method found for getConfig()")
 		if conf is not None:
